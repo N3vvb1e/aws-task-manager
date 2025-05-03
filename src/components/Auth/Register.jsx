@@ -56,7 +56,7 @@ const Register = () => {
       if (result.success) {
         setShowConfirmation(true);
       } else {
-        setError(result.message);
+        setError(result.message || "Registration failed. Please try again.");
       }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");

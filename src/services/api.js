@@ -1,4 +1,4 @@
-import { post, get, put, del } from "aws-amplify/api";
+import { apiHandler } from "./apiHandler";
 
 /**
  * API service for task operations
@@ -7,88 +7,56 @@ const apiName = "taskApi";
 
 // Get all tasks for the current user
 export const getTasks = async () => {
-  try {
-    const response = await get(apiName, "/tasks", {});
+  const result = await apiHandler.get({
+    apiName,
+    path: "/tasks",
+  });
+
+  // Transform the response if needed
+  if (result.success && result.data) {
     return {
       success: true,
-      data: response.tasks,
-    };
-  } catch (error) {
-    console.error("Error fetching tasks:", error);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to fetch tasks",
+      data: result.data.tasks || [],
     };
   }
+
+  return result;
 };
 
 // Get a single task by ID
 export const getTaskById = async (taskId) => {
-  try {
-    const response = await get(apiName, `/tasks/${taskId}`, {});
-    return {
-      success: true,
-      data: response,
-    };
-  } catch (error) {
-    console.error(`Error fetching task ${taskId}:`, error);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to fetch task",
-    };
-  }
+  return apiHandler.get({
+    apiName,
+    path: `/tasks/${taskId}`,
+  });
 };
 
 // Create a new task
 export const createTask = async (taskData) => {
-  try {
-    const response = await post(apiName, "/tasks", {
+  return apiHandler.post({
+    apiName,
+    path: "/tasks",
+    options: {
       body: taskData,
-    });
-    return {
-      success: true,
-      data: response,
-    };
-  } catch (error) {
-    console.error("Error creating task:", error);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to create task",
-    };
-  }
+    },
+  });
 };
 
 // Update an existing task
 export const updateTask = async (taskId, taskData) => {
-  try {
-    const response = await put(apiName, `/tasks/${taskId}`, {
+  return apiHandler.put({
+    apiName,
+    path: `/tasks/${taskId}`,
+    options: {
       body: taskData,
-    });
-    return {
-      success: true,
-      data: response,
-    };
-  } catch (error) {
-    console.error(`Error updating task ${taskId}:`, error);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to update task",
-    };
-  }
+    },
+  });
 };
 
 // Delete a task
 export const deleteTask = async (taskId) => {
-  try {
-    await del(apiName, `/tasks/${taskId}`, {});
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error(`Error deleting task ${taskId}:`, error);
-    return {
-      success: false,
-      message: error.response?.data?.message || "Failed to delete task",
-    };
-  }
+  return apiHandler.delete({
+    apiName,
+    path: `/tasks/${taskId}`,
+  });
 };

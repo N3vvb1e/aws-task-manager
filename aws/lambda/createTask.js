@@ -10,13 +10,18 @@ exports.handler = async (event) => {
     // Get the user ID from the Cognito-authenticated request
     const userId = event.requestContext.authorizer.claims.sub;
 
+    // Define headers for CORS
+    const headers = {
+      "Access-Control-Allow-Origin": "*", // Using * for development
+      "Access-Control-Allow-Headers":
+        "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    };
+
     if (!userId) {
       return {
         statusCode: 401,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Credentials": true,
-        },
+        headers,
         body: JSON.stringify({
           message: "Unauthorized access",
         }),
@@ -30,10 +35,7 @@ exports.handler = async (event) => {
     if (!taskData.title) {
       return {
         statusCode: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Credentials": true,
-        },
+        headers,
         body: JSON.stringify({
           message: "Task title is required",
         }),
@@ -62,10 +64,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 201,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
-      },
+      headers,
       body: JSON.stringify({
         message: "Task created successfully",
         task: newTask,
@@ -77,8 +76,10 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
+        "Access-Control-Allow-Origin": "*", // Using * for development
+        "Access-Control-Allow-Headers":
+          "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
       },
       body: JSON.stringify({
         message: "Error creating task",

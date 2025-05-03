@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Auth } from "aws-amplify/auth";
+import { getCurrentUser } from "aws-amplify/auth";
 import Header from "./components/Layout/Header";
 import Footer from "./components/Layout/Footer";
 import Login from "./components/Auth/Login";
@@ -18,7 +18,8 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        await Auth.currentAuthenticatedUser();
+        // In Amplify v6, use getCurrentUser() instead of Auth.currentAuthenticatedUser()
+        await getCurrentUser();
         setIsAuthenticated(true);
       } catch (error) {
         setIsAuthenticated(false);

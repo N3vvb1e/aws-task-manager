@@ -2,12 +2,29 @@
 import { Amplify } from "aws-amplify";
 import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 
+// Get environment variables
+const region = import.meta.env.VITE_AWS_REGION || "us-east-1";
+const userPoolId =
+  import.meta.env.VITE_COGNITO_USER_POOL_ID || "us-east-1_iJauJI8w2";
+const userPoolClientId =
+  import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID ||
+  "7obgukbroah840rn0qd6tl8vqj";
+const apiEndpoint =
+  import.meta.env.VITE_API_ENDPOINT ||
+  "https://p7pf7v1je8.execute-api.us-east-1.amazonaws.com/prod";
+const s3Bucket = import.meta.env.VITE_S3_BUCKET || "mycolorfulawsbucket";
+
+// Log config in development
+if (import.meta.env.DEV) {
+  console.log("AWS Config:", { region, userPoolId, apiEndpoint, s3Bucket });
+}
+
 // Amplify configuration
 const awsConfig = {
   Auth: {
     Cognito: {
-      userPoolId: "us-east-1_XXXXXXXXX", // Replace with your actual Cognito User Pool ID
-      userPoolClientId: "XXXXXXXXXXXXXXXXXXXXXXXXXX", // Replace with your App Client ID
+      userPoolId,
+      userPoolClientId,
       loginWith: {
         email: true,
         username: true,
@@ -17,15 +34,33 @@ const awsConfig = {
   API: {
     REST: {
       taskApi: {
-        endpoint: "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod", // Replace with your API Gateway URL
-        region: "us-east-1",
+        endpoint: apiEndpoint,
+        region,
+        // Add this to handle unauthenticated requests (for testing)
+        options: {
+          headers: async () => {
+            try {
+              // Try to get auth session
+              const session = await cognitoUserPoolsTokenProvider.getTokens();
+              return {
+                Authorization: `Bearer ${session.accessToken.toString()}`,
+              };
+            } catch (error) {
+              // If not authenticated, proceed without authorization header
+              console.log(
+                "User not authenticated, proceeding without auth token"
+              );
+              return {};
+            }
+          },
+        },
       },
     },
   },
   Storage: {
     S3: {
-      bucket: "task-manager-uploads", // Replace with your S3 bucket name
-      region: "us-east-1",
+      bucket: s3Bucket,
+      region,
     },
   },
 };

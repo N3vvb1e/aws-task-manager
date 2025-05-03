@@ -27,8 +27,16 @@ const Login = () => {
 
       if (result.success) {
         navigate("/tasks");
+      } else if (result.nextStep) {
+        // Handle additional authentication steps if needed
+        console.log("Additional authentication steps:", result.nextStep);
+        setError(
+          "Additional authentication steps required. Please check your email or phone for verification."
+        );
       } else {
-        setError(result.message);
+        setError(
+          result.message || "Login failed. Please check your credentials."
+        );
       }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");

@@ -48,10 +48,22 @@ export const AuthProvider = ({ children }) => {
   // Sign in function
   const handleSignIn = async (username, password) => {
     try {
-      const user = await signIn({ username, password });
-      setIsAuthenticated(true);
-      setUser(user);
-      return { success: true };
+      const { isSignedIn, nextStep } = await signIn({ username, password });
+
+      if (isSignedIn) {
+        setIsAuthenticated(true);
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        return { success: true };
+      } else if (nextStep) {
+        return {
+          success: false,
+          nextStep,
+          message: "Additional authentication steps required.",
+        };
+      }
+
+      return { success: false, message: "Failed to sign in." };
     } catch (error) {
       return {
         success: false,
@@ -63,17 +75,24 @@ export const AuthProvider = ({ children }) => {
   // Sign up function
   const handleSignUp = async (username, password, email) => {
     try {
-      await signUp({
+      const { isSignUpComplete, nextStep } = await signUp({
         username,
         password,
-        attributes: {
-          email,
-        },
-        autoSignIn: {
-          enabled: true,
+        options: {
+          userAttributes: {
+            email,
+          },
+          autoSignIn: {
+            enabled: true,
+          },
         },
       });
-      return { success: true };
+
+      if (nextStep && nextStep.signUpStep === "CONFIRM_SIGN_UP") {
+        return { success: true, message: "Confirmation code sent." };
+      }
+
+      return { success: isSignUpComplete };
     } catch (error) {
       return {
         success: false,
@@ -85,8 +104,12 @@ export const AuthProvider = ({ children }) => {
   // Confirm sign up function
   const handleConfirmSignUp = async (username, code) => {
     try {
-      await confirmSignUp({ username, confirmationCode: code });
-      return { success: true };
+      const { isSignUpComplete } = await confirmSignUp({
+        username,
+        confirmationCode: code,
+      });
+
+      return { success: isSignUpComplete };
     } catch (error) {
       return {
         success: false,
