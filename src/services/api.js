@@ -1,3 +1,4 @@
+// src/services/api.js
 import { apiHandler } from "./apiHandler";
 
 /**
@@ -12,17 +13,41 @@ export const getTasks = async () => {
     path: "/tasks",
   });
 
-  // Transform the response if needed
-  if (result.success && result.data) {
+  // Debug the result
+  console.log("getTasks API result:", result);
+
+  // Handle successful response with tasks array
+  if (result.success && result.data && result.data.tasks) {
     return {
       success: true,
-      data: result.data.tasks || [],
+      data: result.data.tasks,
     };
   }
 
+  // Handle successful response but no tasks array
+  if (result.success && result.data) {
+    // Return an empty array if no tasks property
+    console.warn("API returned success but no tasks property");
+    return {
+      success: true,
+      data: [],
+    };
+  }
+
+  // Pass through network error flag
+  if (result.networkError) {
+    return {
+      success: false,
+      message: result.message || "Network error occurred",
+      networkError: true,
+    };
+  }
+
+  // Return the error response
   return result;
 };
 
+// Similar pattern for other API functions...
 // Get a single task by ID
 export const getTaskById = async (taskId) => {
   return apiHandler.get({

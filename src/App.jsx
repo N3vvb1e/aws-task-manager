@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { getCurrentUser } from "aws-amplify/auth";
@@ -8,6 +9,8 @@ import Register from "./components/Auth/Register";
 import TaskList from "./components/Tasks/TaskList";
 import TaskForm from "./components/Tasks/TaskForm";
 import { AuthProvider } from "./components/Auth/AuthContext";
+import AuthDebugHelper from "./components/Debug/AuthDebugHelper";
+import NetworkStatus from "./components/Common/NetworkStatus";
 import "./index.css";
 
 // Authenticated route component
@@ -39,6 +42,13 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+  // Add this line here, before the return statement
+  console.log(
+    "API Endpoint:",
+    import.meta.env.VITE_API_ENDPOINT ||
+      "https://p7pf7v1je8.execute-api.us-east-1.amazonaws.com/prod"
+  );
+
   return (
     <AuthProvider>
       <div className="app-container">
@@ -67,6 +77,7 @@ function App() {
           </Routes>
         </main>
         <Footer />
+        {import.meta.env.DEV && <AuthDebugHelper />} {/* Add the debugger */}
       </div>
     </AuthProvider>
   );

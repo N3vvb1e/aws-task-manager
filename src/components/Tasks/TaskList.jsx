@@ -1,36 +1,67 @@
+// src/components/Tasks/TaskList.jsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getTasks } from "../../services/api";
 import TaskItem from "./TaskItem";
+import { useAuth } from "../Auth/AuthContext";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [retrying, setRetrying] = useState(false);
 
+  const { isAuthenticated, refreshAuth } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const result = await getTasks();
-
-        if (result.success) {
-          setTasks(result.data);
-        } else {
-          setError(result.message);
-        }
-      } catch (error) {
-        setError("An unexpected error occurred. Please try again.");
-        console.error("Fetch tasks error:", error);
-      } finally {
-        setLoading(false);
+  const fetchTasks = async (showRetrying = false) => {
+    try {
+      if (showRetrying) {
+        setRetrying(true);
       }
-    };
 
-    fetchTasks();
-  }, []);
+      // Verify authentication first
+      await refreshAuth();
+
+      const result = await getTasks();
+      console.log("Tasks result:", result);
+
+      if (result.success && Array.isArray(result.data)) {
+        setTasks(result.data);
+        setError("");
+      } else if (result.authError) {
+        // Handle auth errors
+        setError("Authentication error. Please login again.");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } else if (result.networkError) {
+        // Handle network errors
+        setError("Network error. Please check your connection and try again.");
+        setTasks([]);
+      } else {
+        // Handle other errors
+        setError(result.message || "Failed to fetch tasks");
+        setTasks([]);
+      }
+    } catch (error) {
+      console.error("Fetch tasks error:", error);
+      setError("An unexpected error occurred. Please try again.");
+      setTasks([]);
+    } finally {
+      setLoading(false);
+      setRetrying(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTasks();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated, navigate, refreshAuth]);
 
   const handleTaskDeleted = (taskId) => {
     setTasks(tasks.filter((task) => task.id !== taskId));
@@ -44,8 +75,17 @@ const TaskList = () => {
     );
   };
 
-  const filteredTasks =
-    filter === "all" ? tasks : tasks.filter((task) => task.status === filter);
+  const handleRetry = () => {
+    setLoading(true);
+    fetchTasks(true);
+  };
+
+  // Safely filter tasks - ensure tasks is always an array
+  const filteredTasks = !tasks
+    ? []
+    : filter === "all"
+    ? tasks
+    : tasks.filter((task) => task.status === filter);
 
   if (loading) {
     return <div className="loading">Loading tasks...</div>;
@@ -84,29 +124,67 @@ const TaskList = () => {
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          {error}
+          {error.includes("Network error") && (
+            <button
+              className="btn btn-primary"
+              style={{ marginLeft: "1rem" }}
+              onClick={handleRetry}
+              disabled={retrying}
+            >
+              {retrying ? "Retrying..." : "Retry"}
+            </button>
+          )}
+          {error.includes("authentication") && (
+            <button
+              className="btn btn-primary"
+              style={{ marginLeft: "1rem" }}
+              onClick={() => navigate("/login")}
+            >
+              Go to Login
+            </button>
+          )}
+        </div>
+      )}
 
-      {filteredTasks.length === 0 ? (
+      {retrying && (
+        <div className="loading" style={{ marginTop: "1rem" }}>
+          Retrying connection...
+        </div>
+      )}
+
+      {!retrying &&
+      Array.isArray(filteredTasks) &&
+      filteredTasks.length === 0 ? (
         <div style={{ textAlign: "center", padding: "2rem" }}>
-          <p>No tasks found. Create your first task to get started!</p>
-          <Link
-            to="/tasks/new"
-            className="btn btn-primary"
-            style={{ marginTop: "1rem" }}
-          >
-            Create Task
-          </Link>
+          <p>
+            {error
+              ? "Could not load tasks."
+              : "No tasks found. Create your first task to get started!"}
+          </p>
+          {!error && (
+            <Link
+              to="/tasks/new"
+              className="btn btn-primary"
+              style={{ marginTop: "1rem" }}
+            >
+              Create Task
+            </Link>
+          )}
         </div>
       ) : (
         <div className="task-list">
-          {filteredTasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onDeleted={handleTaskDeleted}
-              onStatusChanged={handleTaskStatusChanged}
-            />
-          ))}
+          {Array.isArray(filteredTasks) &&
+            filteredTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onDeleted={handleTaskDeleted}
+                onStatusChanged={handleTaskStatusChanged}
+              />
+            ))}
         </div>
       )}
 
