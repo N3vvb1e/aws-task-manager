@@ -9,8 +9,6 @@ import Register from "./components/Auth/Register";
 import TaskList from "./components/Tasks/TaskList";
 import TaskForm from "./components/Tasks/TaskForm";
 import { AuthProvider } from "./components/Auth/AuthContext";
-import AuthDebugHelper from "./components/Debug/AuthDebugHelper";
-import NetworkStatus from "./components/Common/NetworkStatus";
 import "./index.css";
 
 // Authenticated route component
@@ -77,7 +75,6 @@ function App() {
           </Routes>
         </main>
         <Footer />
-        {import.meta.env.DEV && <AuthDebugHelper />} {/* Add the debugger */}
       </div>
     </AuthProvider>
   );
